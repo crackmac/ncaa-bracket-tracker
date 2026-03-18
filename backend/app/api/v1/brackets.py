@@ -168,13 +168,23 @@ async def create_bracket(bracket_data: BracketCreate, db: Session = Depends(get_
         db.add(bracket)
         db.flush()
 
+        # Fetch all games for tournament once (avoid N+1 queries)
+        games_stmt = select(Game).where(Game.tournament_id == tournament.id)
+        games = {g.id: g for g in db.execute(games_stmt).scalars().all()}
+
         # Create picks
         for pick_data in bracket_data.picks:
-            # Get game to determine points value
-            stmt4 = select(Game).where(Game.id == pick_data.game_id)
-            game = db.execute(stmt4).scalar_one_or_none()
+            # Get game from pre-fetched dictionary
+            game = games.get(pick_data.game_id)
             if not game:
                 raise HTTPException(status_code=400, detail=f"Game {pick_data.game_id} not found")
+
+            # Validate predicted winner is playing in this game
+            if pick_data.predicted_winner_id not in [game.home_team_id, game.away_team_id]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Team {pick_data.predicted_winner_id} is not playing in game {pick_data.game_id}"
+                )
 
             # Determine points value based on round
             from app.services.scoring_engine import ROUND_POINTS
