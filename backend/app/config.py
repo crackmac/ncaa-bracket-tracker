@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql://postgres:postgres@db:5432/bracket_tracker"
 
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379/0"
+
     # ESPN API
     espn_api_base_url: str = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball"
     espn_cache_ttl: int = 300  # 5 minutes
