@@ -8,6 +8,9 @@ from app.db.base import Base
 from app.db.models import Tournament, Team, Game
 from scripts.load_tournament import load_tournament
 
+# Get absolute path to tournament data
+TOURNAMENT_DATA_DIR = Path(__file__).parent.parent.parent / "data" / "tournaments"
+
 
 @pytest.fixture
 def test_db():
@@ -22,7 +25,7 @@ def test_db():
 
 def test_load_tournament_creates_all_entities(test_db):
     """Test loading tournament creates all teams and games."""
-    yaml_path = Path("data/tournaments/2026.yaml")
+    yaml_path = TOURNAMENT_DATA_DIR / "2026.yaml"
 
     tournament_id, teams, games = load_tournament(yaml_path, test_db)
 
@@ -38,7 +41,7 @@ def test_load_tournament_creates_all_entities(test_db):
 
 def test_load_tournament_is_idempotent(test_db):
     """Test loading same tournament twice doesn't create duplicates."""
-    yaml_path = Path("data/tournaments/2026.yaml")
+    yaml_path = TOURNAMENT_DATA_DIR / "2026.yaml"
 
     # Load once
     tournament_id1, teams1, games1 = load_tournament(yaml_path, test_db)
@@ -56,7 +59,7 @@ def test_load_tournament_is_idempotent(test_db):
 
 def test_load_tournament_teams_have_correct_regions(test_db):
     """Test loaded teams have correct region assignments."""
-    yaml_path = Path("data/tournaments/2026.yaml")
+    yaml_path = TOURNAMENT_DATA_DIR / "2026.yaml"
     load_tournament(yaml_path, test_db)
 
     regions = ["East", "West", "South", "Midwest"]
@@ -71,7 +74,7 @@ def test_load_tournament_teams_have_correct_regions(test_db):
 
 def test_load_tournament_creates_correct_matchups(test_db):
     """Test Round 64 games have correct seed matchups."""
-    yaml_path = Path("data/tournaments/2026.yaml")
+    yaml_path = TOURNAMENT_DATA_DIR / "2026.yaml"
     load_tournament(yaml_path, test_db)
 
     games = test_db.query(Game).filter(Game.round == "Round 64").all()
@@ -79,8 +82,8 @@ def test_load_tournament_creates_correct_matchups(test_db):
 
     # Check typical matchups (1v16, 8v9, etc.)
     for game in games:
-        home_team = test_db.query(Team).get(game.home_team_id)
-        away_team = test_db.query(Team).get(game.away_team_id)
+        home_team = test_db.get(Team, game.home_team_id)
+        away_team = test_db.get(Team, game.away_team_id)
 
         # Verify teams are from same region
         assert home_team.region == away_team.region == game.region
