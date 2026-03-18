@@ -213,6 +213,11 @@ python scripts/load_tournament.py data/tournaments/2026.yaml
 - Form fields:
   - Bracket name (required, text input)
   - Bracket type (dropdown: Chalk, Balanced, Chaos, Custom)
+    - **Note:** Bracket type is a label only, does not affect pick logic
+    - Chalk: Favors higher seeds
+    - Balanced: Mix of favorites and upsets
+    - Chaos: Upset-heavy predictions
+    - Custom: User-defined strategy
 - Submit button creates bracket + 63 picks
 
 **Interactive Picker Component:**
@@ -284,7 +289,11 @@ Content-Type: multipart/form-data
 
 **Implementation:**
 - Parse JSON/YAML
-- Resolve team names to IDs
+- Resolve team names to IDs:
+  - If `winner` is numeric, treat as team ID (lookup in database)
+  - If `winner` is string, resolve by name (case-insensitive exact match)
+  - If ambiguous (multiple teams with same name), return error: "Ambiguous team name '{name}' - use team ID instead"
+  - If not found, return error: "Team '{name}' not found in tournament"
 - Validate bracket tree structure
 - Create Bracket + Pick records
 - Return bracket ID or validation errors
@@ -355,8 +364,10 @@ def poll_espn_scores():
     if not tournament or not is_tournament_active(tournament):
         return
 
-    # Call existing sync endpoint logic
-    # (refactor sync.py endpoint into reusable function)
+    # Call sync logic (extract from sync.py endpoint)
+    # Refactoring: Move core sync logic from sync.py endpoint handler
+    # into app/services/sync_service.py:sync_espn_data(db)
+    # The endpoint handler becomes a thin wrapper that calls the service
     db = SessionLocal()
     try:
         games_updated = sync_espn_data(db)
@@ -409,6 +420,9 @@ def poll_espn_scores():
 
 1. **Game Start** (5 minutes before scheduled_time)
    - Message: "🏀 Game Starting: [1] Duke vs [16] Hampton in 5 minutes!"
+   - **Note:** `scheduled_time` is populated from ESPN API during sync (not from YAML)
+   - ESPN provides game datetime when tournament schedule is published
+   - If `scheduled_time` is null, skip game start notifications
 
 2. **Halftime** (when ESPN status = "STATUS_HALFTIME")
    - Message: "⏸️ Halftime: [1] Duke 42 - [16] Hampton 28"
