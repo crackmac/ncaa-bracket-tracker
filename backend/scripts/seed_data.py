@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -54,10 +55,11 @@ def seed_database():
         print(f"✓ Created bracket: {bracket.name}")
 
         # Create picks for first few games (for demo)
-        first_games = session.query(Game).filter(
+        stmt = select(Game).where(
             Game.tournament_id == tournament.id,
             Game.round == "Round 64"
-        ).limit(4).all()
+        ).limit(4)
+        first_games = session.execute(stmt).scalars().all()
 
         for game in first_games:
             # Predict higher seed wins

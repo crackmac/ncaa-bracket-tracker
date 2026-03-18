@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import datetime
 
 import yaml
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 # Add parent directory to path for imports
@@ -91,7 +92,8 @@ def load_tournament(yaml_path: Path, db: Session) -> tuple[int, int, int]:
     tournament_data = data["tournament"]
 
     # Check if tournament already exists
-    existing = db.query(Tournament).filter(Tournament.year == tournament_data["year"]).first()
+    stmt = select(Tournament).where(Tournament.year == tournament_data["year"])
+    existing = db.execute(stmt).scalar_one_or_none()
     if existing:
         print(f"Tournament {tournament_data['year']} already exists (id={existing.id})")
         return (existing.id, 0, 0)
