@@ -68,6 +68,7 @@ class Game(Base):
     away_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     status: Mapped[str] = mapped_column(String(50), nullable=False)  # scheduled, in_progress, completed
+    last_notified_event: Mapped[str | None] = mapped_column(String, nullable=True)
     scheduled_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
