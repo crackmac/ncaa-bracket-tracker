@@ -76,6 +76,17 @@ class ApiClient {
   async sendTestNotification(): Promise<{ message: string }> {
     return this.request('/notify', { method: 'POST' })
   }
+
+  async createBracket(data: {
+    name: string
+    bracket_type: string
+    picks: { game_id: number; predicted_winner_id: number }[]
+  }): Promise<Bracket> {
+    return this.request('/brackets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
 }
 
 export const apiClient = new ApiClient()

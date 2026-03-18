@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import BracketsIndex from './pages/BracketsIndex'
+import BracketCreate from './pages/BracketCreate'
 import Bracket from './components/Bracket/Bracket'
 import { apiClient } from './api/client'
 import { useGames } from './hooks/useGames'
@@ -111,6 +112,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<BracketsIndex />} />
+        <Route path="/brackets/create" element={<BracketCreate />} />
         <Route path="/brackets/:id" element={<BracketDetailPage />} />
       </Routes>
     </BrowserRouter>
