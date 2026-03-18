@@ -21,7 +21,7 @@ def test_validate_no_duplicate_game_picks():
     picks = [
         {"game_id": "game_1", "predicted_winner_id": 1},
         {"game_id": "game_1", "predicted_winner_id": 2},  # Duplicate
-    ] + [{"game_id": f"game_{i}", "predicted_winner_id": 1} for i in range(2, 64)]
+    ] + [{"game_id": f"game_{i}", "predicted_winner_id": 1} for i in range(2, 63)]
 
     with pytest.raises(ValidationError, match="Duplicate picks for game"):
         validator.validate_picks(picks, total_games=63)
@@ -33,7 +33,7 @@ def test_resolve_team_by_id():
 
     validator = BracketValidator()
     mock_teams = {
-        1: Team(id=1, name="Duke", seed=1, region="East", espn_id="duke")
+        1: Team(id=1, tournament_id=1, name="Duke", seed=1, region="East", espn_id="duke")
     }
 
     result = validator.resolve_team("1", mock_teams)
@@ -46,7 +46,7 @@ def test_resolve_team_by_name_case_insensitive():
 
     validator = BracketValidator()
     mock_teams = {
-        1: Team(id=1, name="Duke", seed=1, region="East", espn_id="duke")
+        1: Team(id=1, tournament_id=1, name="Duke", seed=1, region="East", espn_id="duke")
     }
     mock_teams_by_name = {"duke": [1]}
 
