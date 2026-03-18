@@ -60,6 +60,18 @@ export default function BracketsIndex() {
             My Brackets
           </h1>
           <p className="text-slate-400 text-lg">Track your March Madness predictions</p>
+
+          <div className="mt-6">
+            <Link
+              to="/brackets/create"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Create New Bracket
+            </Link>
+          </div>
         </div>
 
         {/* Empty State */}
