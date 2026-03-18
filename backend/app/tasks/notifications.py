@@ -1,14 +1,18 @@
 """Celery task for sending WhatsApp notifications."""
+import logging
 import httpx
 from app.celery_app import celery_app
 from app.db.session import SessionLocal
 from app.services.notification_scheduler import NotificationScheduler
 from app.config import settings
 
+logger = logging.getLogger("app.tasks.notifications")
+
 
 @celery_app.task(name="app.tasks.notifications.send_notifications")
 def send_notifications():
     """Check for games needing notifications and send via OpenClaw."""
+    logger.info("Checking for notifications to send")
     db = SessionLocal()
 
     try:
@@ -41,17 +45,20 @@ def send_notifications():
                     if response.status_code == 200:
                         # Mark notification as sent
                         scheduler.mark_notification_sent(game.id, event_type)
+                        logger.info(f"Sent {event_type} notification for game {game.id}")
                         sent_count += 1
                     else:
                         print(f"Failed to send notification: {response.status_code}")
                 else:
                     # No OpenClaw configured - just mark as sent (for testing)
                     scheduler.mark_notification_sent(game.id, event_type)
+                    logger.info(f"Sent {event_type} notification for game {game.id}")
                     sent_count += 1
 
             except Exception as e:
                 print(f"Error sending notification for game {game.id}: {e}")
 
+        logger.info(f"Notifications complete: {sent_count} sent")
         return {
             "success": True,
             "notifications_sent": sent_count

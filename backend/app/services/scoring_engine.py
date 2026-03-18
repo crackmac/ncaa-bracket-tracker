@@ -1,6 +1,9 @@
+import logging
 from sqlalchemy.orm import Session
 
 from app.db.models import Bracket, Game, Pick, Team
+
+logger = logging.getLogger("app.scoring_engine")
 
 # ESPN Tournament Challenge scoring
 ROUND_POINTS = {
@@ -50,6 +53,7 @@ class ScoringEngine:
         Returns:
             Dictionary with total_points, correct_picks, total_picks, and possible_points.
         """
+        logger.debug(f"Calculating score for bracket {bracket_id}")
         bracket = self.db.query(Bracket).filter(Bracket.id == bracket_id).first()
         if not bracket:
             raise ValueError(f"Bracket {bracket_id} not found")
@@ -95,6 +99,7 @@ class ScoringEngine:
 
         self.db.commit()
 
+        logger.info(f"Bracket {bracket_id} score: {total_points}/{bracket.possible_points}")
         return {
             "total_points": total_points,
             "correct_picks": correct_picks,

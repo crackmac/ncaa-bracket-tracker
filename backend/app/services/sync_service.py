@@ -1,8 +1,11 @@
 """Sync service for updating game data from ESPN."""
+import logging
 from typing import Any
 from sqlalchemy.orm import Session
 
 from app.db.models import Game, Bracket
+
+logger = logging.getLogger("app.sync_service")
 
 
 class SyncService:
@@ -27,10 +30,12 @@ class SyncService:
             Dict with games_updated and brackets_updated counts
         """
         games_updated = 0
+        logger.info("Starting ESPN data sync")
 
         try:
             # Fetch today's games from ESPN
             events = await self.espn_client.get_tournament_games()
+            logger.info(f"Fetched {len(events)} events from ESPN")
 
             for event in events:
                 for competition in event.competitions:
@@ -64,6 +69,7 @@ class SyncService:
                             else:
                                 game.status = "scheduled"
 
+                            logger.debug(f"Updated game {game.espn_id}: {game.status}")
                             games_updated += 1
 
             self.db.commit()
@@ -77,6 +83,7 @@ class SyncService:
                 engine.calculate_bracket_score(bracket.id)
                 brackets_updated += 1
 
+            logger.info(f"Sync complete: {games_updated} games updated, {brackets_updated} brackets recalculated")
             return {
                 "games_updated": games_updated,
                 "brackets_updated": brackets_updated
