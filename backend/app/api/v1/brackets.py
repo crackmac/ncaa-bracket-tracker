@@ -1,11 +1,34 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.db.models import Bracket, Pick
+from app.db.models import Bracket, Pick, Game, Tournament, User
+from app.services.bracket_validator import BracketValidator, ValidationError
 
 router = APIRouter()
+
+
+class PickCreate(BaseModel):
+    """Pick creation model."""
+    game_id: int
+    predicted_winner_id: int
+
+
+class BracketCreate(BaseModel):
+    """Bracket creation model."""
+    name: str
+    bracket_type: str
+    picks: list[PickCreate]
+
+
+class BracketCreateResponse(BaseModel):
+    """Bracket creation response."""
+    id: int
+    name: str
+    bracket_type: str
+    total_picks: int
 
 
 class BracketResponse(BaseModel):
@@ -101,3 +124,82 @@ async def get_bracket(bracket_id: int, db: Session = Depends(get_db)):
         total_picks=len(picks),
         picks=pick_responses,
     )
+
+
+@router.post("/brackets", response_model=BracketCreateResponse, status_code=201)
+async def create_bracket(bracket_data: BracketCreate, db: Session = Depends(get_db)):
+    """Create a new bracket with picks."""
+    validator = BracketValidator()
+
+    try:
+        # Get active tournament
+        stmt = select(Tournament).order_by(Tournament.year.desc())
+        tournament = db.execute(stmt).scalar_one_or_none()
+        if not tournament:
+            raise HTTPException(status_code=404, detail="No active tournament found")
+
+        # MVP: Get first user (auth in Phase 3)
+        stmt2 = select(User)
+        user = db.execute(stmt2).scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=404, detail="No user found")
+
+        # Validate picks
+        picks_dicts = [p.model_dump() for p in bracket_data.picks]
+
+        # Get all games for tournament
+        stmt3 = select(Game).where(Game.tournament_id == tournament.id)
+        total_games = len(db.execute(stmt3).scalars().all())
+
+        try:
+            validator.validate_picks(picks_dicts, total_games=total_games)
+        except ValidationError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+        # Create bracket
+        bracket = Bracket(
+            user_id=user.id,
+            tournament_id=tournament.id,
+            name=bracket_data.name,
+            bracket_type=bracket_data.bracket_type,
+            total_points=0,
+            possible_points=0,
+        )
+        db.add(bracket)
+        db.flush()
+
+        # Create picks
+        for pick_data in bracket_data.picks:
+            # Get game to determine points value
+            stmt4 = select(Game).where(Game.id == pick_data.game_id)
+            game = db.execute(stmt4).scalar_one_or_none()
+            if not game:
+                raise HTTPException(status_code=400, detail=f"Game {pick_data.game_id} not found")
+
+            # Determine points value based on round
+            from app.services.scoring_engine import ROUND_POINTS
+            points_value = ROUND_POINTS.get(game.round, 10)
+
+            pick = Pick(
+                bracket_id=bracket.id,
+                game_id=pick_data.game_id,
+                predicted_winner_id=pick_data.predicted_winner_id,
+                points_value=points_value,
+                points_earned=0,
+            )
+            db.add(pick)
+
+        db.commit()
+
+        return BracketCreateResponse(
+            id=bracket.id,
+            name=bracket.name,
+            bracket_type=bracket.bracket_type,
+            total_picks=len(bracket_data.picks),
+        )
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create bracket: {str(e)}")
