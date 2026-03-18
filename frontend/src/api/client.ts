@@ -18,6 +18,14 @@ export interface Game {
   away_score: number | null
   status: string
   round: string
+  region?: string
+  home_team_id?: number
+  home_team_name?: string
+  home_team_seed?: number
+  away_team_id?: number
+  away_team_name?: string
+  away_team_seed?: number
+  is_upset?: boolean
 }
 
 export interface BracketDetails extends Bracket {
