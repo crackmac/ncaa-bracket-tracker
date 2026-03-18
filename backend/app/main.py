@@ -3,8 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import brackets, games, notifications, scores, sync
 from app.config import settings
+from app.logging_config import logger
 
 app = FastAPI(title=settings.app_name, debug=settings.debug)
+
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Application starting up")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("Application shutting down")
+
 
 # CORS middleware for local development
 app.add_middleware(
