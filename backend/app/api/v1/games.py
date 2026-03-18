@@ -15,6 +15,8 @@ class GameResponse(BaseModel):
     espn_id: str
     round: str
     region: str
+    home_team_id: int
+    away_team_id: int
     home_team_name: str
     away_team_name: str
     home_team_seed: int
@@ -45,6 +47,8 @@ async def list_games(db: Session = Depends(get_db)):
                     espn_id=game.espn_id,
                     round=game.round,
                     region=game.region,
+                    home_team_id=home_team.id,
+                    away_team_id=away_team.id,
                     home_team_name=home_team.name,
                     away_team_name=away_team.name,
                     home_team_seed=home_team.seed,

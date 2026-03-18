@@ -140,9 +140,13 @@ async def get_bracket(bracket_id: int, db: Session = Depends(get_db)):
 @router.post("/brackets", response_model=BracketCreateResponse, status_code=201)
 async def create_bracket(bracket_data: BracketCreate, db: Session = Depends(get_db)):
     """Create a new bracket with picks."""
+    import logging
+    logger = logging.getLogger("app")
     validator = BracketValidator()
 
     try:
+        logger.info(f"Creating bracket: {bracket_data.name}, picks: {len(bracket_data.picks)}")
+
         # Get active tournament
         stmt = select(Tournament).order_by(Tournament.year.desc())
         tournament = db.execute(stmt).scalar_one_or_none()
@@ -162,9 +166,12 @@ async def create_bracket(bracket_data: BracketCreate, db: Session = Depends(get_
         stmt3 = select(Game).where(Game.tournament_id == tournament.id)
         total_games = len(db.execute(stmt3).scalars().all())
 
+        logger.info(f"Total games in tournament: {total_games}, picks received: {len(picks_dicts)}")
+
         try:
             validator.validate_picks(picks_dicts, total_games=total_games)
         except ValidationError as e:
+            logger.error(f"Validation error: {str(e)}")
             raise HTTPException(status_code=400, detail=str(e))
 
         # Create bracket
@@ -192,6 +199,10 @@ async def create_bracket(bracket_data: BracketCreate, db: Session = Depends(get_
 
             # Validate predicted winner is playing in this game
             if pick_data.predicted_winner_id not in [game.home_team_id, game.away_team_id]:
+                logger.error(
+                    f"Invalid pick: team {pick_data.predicted_winner_id} not in game {pick_data.game_id}. "
+                    f"Game has teams: {game.home_team_id}, {game.away_team_id}"
+                )
                 raise HTTPException(
                     status_code=400,
                     detail=f"Team {pick_data.predicted_winner_id} is not playing in game {pick_data.game_id}"

@@ -62,7 +62,7 @@ export default function BracketPicker({ games, onPicksChange }: BracketPickerPro
                     <div className="flex items-center justify-between gap-4">
                       {/* Home team button */}
                       <button
-                        onClick={() => handleTeamClick(game.id, game.home_team_id || 0)}
+                        onClick={() => handleTeamClick(game.id, game.home_team_id)}
                         className={`flex-1 p-3 rounded-lg transition-all ${
                           selected === game.home_team_id
                             ? 'bg-emerald-600 text-white font-bold'
@@ -79,7 +79,7 @@ export default function BracketPicker({ games, onPicksChange }: BracketPickerPro
 
                       {/* Away team button */}
                       <button
-                        onClick={() => handleTeamClick(game.id, game.away_team_id || 0)}
+                        onClick={() => handleTeamClick(game.id, game.away_team_id)}
                         className={`flex-1 p-3 rounded-lg transition-all ${
                           selected === game.away_team_id
                             ? 'bg-emerald-600 text-white font-bold'

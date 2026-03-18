@@ -147,13 +147,21 @@ export default function BracketCreate() {
             <BracketPicker games={games} onPicksChange={setPicks} />
 
             {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading || picks.length !== games.length}
-              className="w-full px-6 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-colors"
-            >
-              {loading ? 'Creating...' : `Create Bracket (${picks.length}/${games.length} picked)`}
-            </button>
+            <div className="space-y-2">
+              {picks.length < games.length && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400 text-sm">
+                  ⚠️ You must pick a winner for all {games.length} games before creating your bracket.
+                  Currently selected: {picks.length}/{games.length}
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={loading || picks.length !== games.length}
+                className="w-full px-6 py-3 bg-amber-500 hover:bg-amber-600 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold rounded-lg transition-colors"
+              >
+                {loading ? 'Creating...' : `Create Bracket (${picks.length}/${games.length} picked)`}
+              </button>
+            </div>
           </form>
         ) : (
           <form onSubmit={handleFileSubmit} className="space-y-6">

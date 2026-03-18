@@ -21,7 +21,10 @@ class BracketValidator:
             ValidationError: If validation fails
         """
         if len(picks) != total_games:
-            raise ValidationError(f"Must have exactly {total_games} picks, got {len(picks)}")
+            raise ValidationError(
+                f"Incomplete bracket: You must pick a winner for all {total_games} games. "
+                f"You've selected {len(picks)} pick(s). Please complete your bracket before submitting."
+            )
 
         # Check for duplicate game_ids
         game_ids = [p["game_id"] for p in picks]
