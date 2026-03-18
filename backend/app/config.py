@@ -17,9 +17,9 @@ class Settings(BaseSettings):
     espn_cache_ttl: int = 300  # 5 minutes
 
     # OpenClaw WhatsApp
-    openclaw_api_url: str = ""
-    openclaw_api_token: str = ""
-    whatsapp_notification_number: str = ""
+    openclaw_api_url: str | None = None
+    openclaw_api_token: str | None = None
+    whatsapp_notification_number: str | None = None
 
     # App settings
     app_name: str = "NCAA Bracket Tracker"

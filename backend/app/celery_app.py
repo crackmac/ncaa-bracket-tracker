@@ -8,7 +8,7 @@ celery_app = Celery(
     "bracket_tracker",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
-    include=["app.tasks.polling"]
+    include=["app.tasks.polling", "app.tasks.notifications"]
 )
 
 # Configure Celery
@@ -25,5 +25,9 @@ celery_app.conf.beat_schedule = {
     "poll-espn-every-5-minutes": {
         "task": "app.tasks.polling.poll_espn_data",
         "schedule": crontab(minute="*/5"),  # Every 5 minutes
+    },
+    "send-notifications-every-10-minutes": {
+        "task": "app.tasks.notifications.send_notifications",
+        "schedule": crontab(minute="*/10"),  # Every 10 minutes
     },
 }
