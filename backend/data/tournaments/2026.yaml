@@ -1,0 +1,124 @@
+tournament:
+  year: 2026
+  name: "NCAA March Madness 2026"
+  start_date: "2026-03-17"
+  end_date: "2026-04-06"
+
+regions:
+  - name: "East"
+    teams:
+      - {name: "Duke", seed: 1, espn_id: "duke_001"}
+      - {name: "Hampton", seed: 16, espn_id: "hampton_016"}
+      - {name: "Kentucky", seed: 2, espn_id: "kentucky_002"}
+      - {name: "Norfolk State", seed: 15, espn_id: "norfolk_015"}
+      - {name: "Baylor", seed: 3, espn_id: "baylor_003"}
+      - {name: "Abilene Christian", seed: 14, espn_id: "abilene_014"}
+      - {name: "UCLA", seed: 4, espn_id: "ucla_004"}
+      - {name: "Iona", seed: 13, espn_id: "iona_013"}
+      - {name: "Gonzaga", seed: 5, espn_id: "gonzaga_005"}
+      - {name: "Oklahoma", seed: 12, espn_id: "oklahoma_012"}
+      - {name: "Texas", seed: 6, espn_id: "texas_006"}
+      - {name: "VCU", seed: 11, espn_id: "vcu_011"}
+      - {name: "UConn", seed: 7, espn_id: "uconn_007"}
+      - {name: "New Mexico State", seed: 10, espn_id: "nmsu_010"}
+      - {name: "Memphis", seed: 8, espn_id: "memphis_008"}
+      - {name: "Missouri", seed: 9, espn_id: "missouri_009"}
+
+  - name: "West"
+    teams:
+      - {name: "Arizona", seed: 1, espn_id: "arizona_w001"}
+      - {name: "Wright State", seed: 16, espn_id: "wright_w016"}
+      - {name: "TCU", seed: 2, espn_id: "tcu_w002"}
+      - {name: "Southeast Missouri State", seed: 15, espn_id: "semo_w015"}
+      - {name: "Wisconsin", seed: 3, espn_id: "wisconsin_w003"}
+      - {name: "Colgate", seed: 14, espn_id: "colgate_w014"}
+      - {name: "Kansas", seed: 4, espn_id: "kansas_w004"}
+      - {name: "Howard", seed: 13, espn_id: "howard_w013"}
+      - {name: "Saint Mary's", seed: 5, espn_id: "stmarys_w005"}
+      - {name: "VCU", seed: 12, espn_id: "vcu_w012"}
+      - {name: "Indiana", seed: 6, espn_id: "indiana_w006"}
+      - {name: "Kent State", seed: 11, espn_id: "kent_w011"}
+      - {name: "Iowa State", seed: 7, espn_id: "iowa_state_w007"}
+      - {name: "Pittsburgh", seed: 10, espn_id: "pitt_w010"}
+      - {name: "Miami", seed: 8, espn_id: "miami_w008"}
+      - {name: "USC", seed: 9, espn_id: "usc_w009"}
+
+  - name: "South"
+    teams:
+      - {name: "Alabama", seed: 1, espn_id: "alabama_s001"}
+      - {name: "Texas A&M Corpus Christi", seed: 16, espn_id: "tamcc_s016"}
+      - {name: "Marquette", seed: 2, espn_id: "marquette_s002"}
+      - {name: "Vermont", seed: 15, espn_id: "vermont_s015"}
+      - {name: "Kansas State", seed: 3, espn_id: "ksu_s003"}
+      - {name: "Montana State", seed: 14, espn_id: "montana_s014"}
+      - {name: "Tennessee", seed: 4, espn_id: "tennessee_s004"}
+      - {name: "Louisiana", seed: 13, espn_id: "louisiana_s013"}
+      - {name: "Maryland", seed: 5, espn_id: "maryland_s005"}
+      - {name: "West Virginia", seed: 12, espn_id: "wvu_s012"}
+      - {name: "San Diego State", seed: 6, espn_id: "sdsu_s006"}
+      - {name: "Charleston", seed: 11, espn_id: "charleston_s011"}
+      - {name: "Creighton", seed: 7, espn_id: "creighton_s007"}
+      - {name: "NC State", seed: 10, espn_id: "ncstate_s010"}
+      - {name: "Auburn", seed: 8, espn_id: "auburn_s008"}
+      - {name: "Iowa", seed: 9, espn_id: "iowa_s009"}
+
+  - name: "Midwest"
+    teams:
+      - {name: "Purdue", seed: 1, espn_id: "purdue_m001"}
+      - {name: "Fairleigh Dickinson", seed: 16, espn_id: "fdu_m016"}
+      - {name: "Texas A&M", seed: 2, espn_id: "tamu_m002"}
+      - {name: "Penn State", seed: 15, espn_id: "pennstate_m015"}
+      - {name: "Xavier", seed: 3, espn_id: "xavier_m003"}
+      - {name: "Kennesaw State", seed: 14, espn_id: "kennesaw_m014"}
+      - {name: "Virginia", seed: 4, espn_id: "virginia_m004"}
+      - {name: "Furman", seed: 13, espn_id: "furman_m013"}
+      - {name: "Florida", seed: 5, espn_id: "florida_m005"}
+      - {name: "Oral Roberts", seed: 12, espn_id: "oral_roberts_m012"}
+      - {name: "Arkansas", seed: 6, espn_id: "arkansas_m006"}
+      - {name: "Illinois", seed: 11, espn_id: "illinois_m011"}
+      - {name: "Michigan State", seed: 7, espn_id: "msu_m007"}
+      - {name: "Drake", seed: 10, espn_id: "drake_m010"}
+      - {name: "Northwestern", seed: 8, espn_id: "northwestern_m008"}
+      - {name: "Boise State", seed: 9, espn_id: "boise_m009"}
+
+matchups:
+  round_64:
+    # East Region
+    - {region: "East", game_id: "game_e_1v16", home_seed: 1, away_seed: 16}
+    - {region: "East", game_id: "game_e_8v9", home_seed: 8, away_seed: 9}
+    - {region: "East", game_id: "game_e_5v12", home_seed: 5, away_seed: 12}
+    - {region: "East", game_id: "game_e_4v13", home_seed: 4, away_seed: 13}
+    - {region: "East", game_id: "game_e_6v11", home_seed: 6, away_seed: 11}
+    - {region: "East", game_id: "game_e_3v14", home_seed: 3, away_seed: 14}
+    - {region: "East", game_id: "game_e_7v10", home_seed: 7, away_seed: 10}
+    - {region: "East", game_id: "game_e_2v15", home_seed: 2, away_seed: 15}
+
+    # West Region
+    - {region: "West", game_id: "game_w_1v16", home_seed: 1, away_seed: 16}
+    - {region: "West", game_id: "game_w_8v9", home_seed: 8, away_seed: 9}
+    - {region: "West", game_id: "game_w_5v12", home_seed: 5, away_seed: 12}
+    - {region: "West", game_id: "game_w_4v13", home_seed: 4, away_seed: 13}
+    - {region: "West", game_id: "game_w_6v11", home_seed: 6, away_seed: 11}
+    - {region: "West", game_id: "game_w_3v14", home_seed: 3, away_seed: 14}
+    - {region: "West", game_id: "game_w_7v10", home_seed: 7, away_seed: 10}
+    - {region: "West", game_id: "game_w_2v15", home_seed: 2, away_seed: 15}
+
+    # South Region
+    - {region: "South", game_id: "game_s_1v16", home_seed: 1, away_seed: 16}
+    - {region: "South", game_id: "game_s_8v9", home_seed: 8, away_seed: 9}
+    - {region: "South", game_id: "game_s_5v12", home_seed: 5, away_seed: 12}
+    - {region: "South", game_id: "game_s_4v13", home_seed: 4, away_seed: 13}
+    - {region: "South", game_id: "game_s_6v11", home_seed: 6, away_seed: 11}
+    - {region: "South", game_id: "game_s_3v14", home_seed: 3, away_seed: 14}
+    - {region: "South", game_id: "game_s_7v10", home_seed: 7, away_seed: 10}
+    - {region: "South", game_id: "game_s_2v15", home_seed: 2, away_seed: 15}
+
+    # Midwest Region
+    - {region: "Midwest", game_id: "game_m_1v16", home_seed: 1, away_seed: 16}
+    - {region: "Midwest", game_id: "game_m_8v9", home_seed: 8, away_seed: 9}
+    - {region: "Midwest", game_id: "game_m_5v12", home_seed: 5, away_seed: 12}
+    - {region: "Midwest", game_id: "game_m_4v13", home_seed: 4, away_seed: 13}
+    - {region: "Midwest", game_id: "game_m_6v11", home_seed: 6, away_seed: 11}
+    - {region: "Midwest", game_id: "game_m_3v14", home_seed: 3, away_seed: 14}
+    - {region: "Midwest", game_id: "game_m_7v10", home_seed: 7, away_seed: 10}
+    - {region: "Midwest", game_id: "game_m_2v15", home_seed: 2, away_seed: 15}
