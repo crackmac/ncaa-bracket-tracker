@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from datetime import datetime
 from typing import Any
 
@@ -5,6 +7,8 @@ import httpx
 from pydantic import BaseModel
 
 from app.config import settings
+
+logger = logging.getLogger("app.espn_client")
 
 
 class ESPNTeam(BaseModel):
@@ -71,48 +75,91 @@ class ESPNClient:
         self.cache[key] = (datetime.utcnow(), data)
 
     async def get_tournament_games(self, date: str | None = None) -> list[ESPNEvent]:
-        """
-        Fetch tournament games from ESPN API.
+        """Fetch tournament games from ESPN API.
 
         Args:
-            date: Date in YYYYMMDD format. If None, fetches today's games.
+            date: Date in YYYY-MM-DD format (defaults to today)
 
         Returns:
-            List of ESPN events (games).
+            List of game events
+
+        Raises:
+            httpx.HTTPError: If API request fails
         """
         cache_key = f"tournament_games_{date or 'today'}"
 
         # Check cache first
         cached = self._get_from_cache(cache_key)
         if cached is not None:
+            logger.debug(f"Returning cached tournament games for date: {date or 'today'}")
             return cached
 
-        # Build URL
-        url = f"{self.base_url}/scoreboard"
-        params = {}
-        if date:
-            params["dates"] = date
+        try:
+            url = f"{self.base_url}/scoreboard"
+            params = {}
+            if date:
+                params["dates"] = date
 
-        # Fetch from ESPN
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, params=params, timeout=10.0)
-            response.raise_for_status()
-            data = response.json()
+            logger.info(f"Fetching games from ESPN API: {url}", extra={"date": date})
 
-        # Parse events
-        events = []
-        if "events" in data:
-            for event_data in data["events"]:
-                try:
-                    event = ESPNEvent(**event_data)
-                    events.append(event)
-                except Exception as e:
-                    print(f"Failed to parse event: {e}")
-                    continue
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(url, params=params)
+                response.raise_for_status()
 
-        # Cache results
-        self._save_to_cache(cache_key, events)
-        return events
+                data = response.json()
+                events = []
+
+                if "events" in data:
+                    for event_data in data["events"]:
+                        try:
+                            event = ESPNEvent(**event_data)
+                            events.append(event)
+                        except Exception as e:
+                            logger.warning(
+                                f"Failed to parse event data: {e}",
+                                exc_info=True,
+                                extra={"event_id": event_data.get("id")},
+                            )
+                            continue
+
+                logger.info(f"Successfully fetched {len(events)} games from ESPN")
+
+                # Cache results
+                self._save_to_cache(cache_key, events)
+                return events
+
+        except httpx.HTTPError as e:
+            logger.error(f"ESPN API request failed: {e}", exc_info=True)
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error fetching ESPN data: {e}", exc_info=True)
+            raise
+
+    async def get_tournament_games_with_retry(
+        self, date: str | None = None, max_retries: int = 3
+    ) -> list[ESPNEvent]:
+        """Fetch games with retry logic.
+
+        Args:
+            date: Date in YYYY-MM-DD format
+            max_retries: Maximum number of retry attempts
+
+        Returns:
+            List of game events
+        """
+        for attempt in range(max_retries):
+            try:
+                return await self.get_tournament_games(date)
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    wait_time = 2**attempt  # Exponential backoff
+                    logger.warning(
+                        f"Retry {attempt + 1}/{max_retries} after {wait_time}s due to: {e}"
+                    )
+                    await asyncio.sleep(wait_time)
+                else:
+                    logger.error(f"All {max_retries} retry attempts failed")
+                    raise
 
     async def get_game_details(self, game_id: str) -> ESPNEvent | None:
         """
@@ -129,15 +176,17 @@ class ESPNClient:
         # Check cache first
         cached = self._get_from_cache(cache_key)
         if cached is not None:
+            logger.debug(f"Returning cached game details for game_id: {game_id}")
             return cached
 
         # Fetch from ESPN
         url = f"{self.base_url}/summary"
         params = {"event": game_id}
 
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(url, params=params, timeout=10.0)
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                logger.info(f"Fetching game details from ESPN API: {url}", extra={"game_id": game_id})
+                response = await client.get(url, params=params)
                 response.raise_for_status()
                 data = response.json()
 
@@ -153,12 +202,20 @@ class ESPNClient:
 
                     # Cache result
                     self._save_to_cache(cache_key, event)
+                    logger.info(f"Successfully fetched game details for game_id: {game_id}")
                     return event
+                else:
+                    logger.warning(
+                        f"Unexpected response structure for game {game_id}: missing header or competition data"
+                    )
+                    return None
 
-            except Exception as e:
-                print(f"Failed to fetch game {game_id}: {e}")
-
-        return None
+        except httpx.HTTPError as e:
+            logger.error(f"ESPN API request failed for game {game_id}: {e}", exc_info=True)
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error fetching game details for {game_id}: {e}", exc_info=True)
+            return None
 
 
 # Global ESPN client instance
