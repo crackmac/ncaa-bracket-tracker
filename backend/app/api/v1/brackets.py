@@ -149,13 +149,13 @@ async def create_bracket(bracket_data: BracketCreate, db: Session = Depends(get_
 
         # Get active tournament
         stmt = select(Tournament).order_by(Tournament.year.desc())
-        tournament = db.execute(stmt).scalar_one_or_none()
+        tournament = db.execute(stmt).scalars().first()
         if not tournament:
             raise HTTPException(status_code=404, detail="No active tournament found")
 
         # MVP: Get first user (auth in Phase 3)
-        stmt2 = select(User)
-        user = db.execute(stmt2).scalar_one_or_none()
+        stmt2 = select(User).order_by(User.id)
+        user = db.execute(stmt2).scalars().first()
         if not user:
             raise HTTPException(status_code=404, detail="No user found")
 
@@ -260,12 +260,12 @@ async def import_bracket(file: UploadFile = File(...), db: Session = Depends(get
 
         # Get tournament and user (same as create_bracket)
         stmt = select(Tournament).order_by(Tournament.year.desc())
-        tournament = db.execute(stmt).scalar_one_or_none()
+        tournament = db.execute(stmt).scalars().first()
         if not tournament:
             raise HTTPException(status_code=404, detail="No active tournament found")
 
-        stmt2 = select(User)
-        user = db.execute(stmt2).scalar_one_or_none()
+        stmt2 = select(User).order_by(User.id)
+        user = db.execute(stmt2).scalars().first()
         if not user:
             raise HTTPException(status_code=404, detail="No user found")
 
