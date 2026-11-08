@@ -1,7 +1,44 @@
 """Unit tests for notification scheduler."""
+from datetime import datetime
+
 import pytest
 from unittest.mock import MagicMock
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from app.db.base import Base
+from app.db.models import Game, Team, Tournament
 from app.services.notification_scheduler import NotificationScheduler
+
+
+@pytest.fixture
+def db_session():
+    """Real in-memory database, so the scheduler runs against actual ORM rows."""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    session = sessionmaker(bind=engine)()
+    yield session
+    session.close()
+
+
+def _add_game(db, status, home_score=None, away_score=None, last_notified_event=None):
+    tournament = Tournament(
+        year=2026, name="Test", start_date=datetime(2026, 3, 17), end_date=datetime(2026, 4, 6)
+    )
+    db.add(tournament)
+    db.flush()
+    duke = Team(tournament_id=tournament.id, name="Duke", seed=1, region="East", espn_id="duke")
+    hampton = Team(tournament_id=tournament.id, name="Hampton", seed=16, region="East", espn_id="hampton")
+    db.add_all([duke, hampton])
+    db.flush()
+    game = Game(
+        tournament_id=tournament.id, espn_id="g1", round="Round 64", region="East",
+        home_team_id=duke.id, away_team_id=hampton.id, status=status,
+        home_score=home_score, away_score=away_score, last_notified_event=last_notified_event,
+    )
+    db.add(game)
+    db.commit()
+    return game
 
 
 def test_scheduled_game_needs_notification():
@@ -305,3 +342,36 @@ def test_upset_with_none_scores():
     # With None scores, should not be considered an upset
     assert len(notifications) == 1
     assert notifications[0]["event_type"] == "game_final"
+
+
+def test_game_start_message_uses_real_team_names(db_session):
+    """Scheduler must work with real Game rows, not just mocks with extra attributes."""
+    _add_game(db_session, status="scheduled")
+
+    notifications = NotificationScheduler(db_session).get_games_needing_notification()
+
+    assert len(notifications) == 1
+    assert notifications[0]["event_type"] == "game_start"
+    assert "Duke vs Hampton" in notifications[0]["message"]
+
+
+def test_upset_detected_from_real_team_seeds(db_session):
+    """16 seed (away) beating a 1 seed is reported as an upset with the winner's name."""
+    _add_game(db_session, status="completed", home_score=70, away_score=74, last_notified_event="halftime")
+
+    notifications = NotificationScheduler(db_session).get_games_needing_notification()
+
+    assert len(notifications) == 1
+    assert notifications[0]["event_type"] == "upset"
+    assert "Hampton wins" in notifications[0]["message"]
+
+
+def test_final_message_uses_real_scores_and_names(db_session):
+    """1 seed (home) winning is a normal final."""
+    _add_game(db_session, status="completed", home_score=81, away_score=60, last_notified_event="halftime")
+
+    notifications = NotificationScheduler(db_session).get_games_needing_notification()
+
+    assert len(notifications) == 1
+    assert notifications[0]["event_type"] == "game_final"
+    assert "Duke 81 - 60 Hampton" in notifications[0]["message"]

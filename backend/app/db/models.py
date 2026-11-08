@@ -80,6 +80,23 @@ class Game(Base):
     away_team: Mapped["Team"] = relationship("Team", foreign_keys=[away_team_id])
     picks: Mapped[list["Pick"]] = relationship("Pick", back_populates="game")
 
+    # Convenience accessors used when formatting notifications
+    @property
+    def home_team_name(self) -> str:
+        return self.home_team.name
+
+    @property
+    def away_team_name(self) -> str:
+        return self.away_team.name
+
+    @property
+    def home_team_seed(self) -> int:
+        return self.home_team.seed
+
+    @property
+    def away_team_seed(self) -> int:
+        return self.away_team.seed
+
 
 class Bracket(Base):
     """Bracket model - represents a user's tournament bracket."""
