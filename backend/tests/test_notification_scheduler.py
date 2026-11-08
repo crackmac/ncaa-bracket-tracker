@@ -305,3 +305,71 @@ def test_upset_with_none_scores():
     # With None scores, should not be considered an upset
     assert len(notifications) == 1
     assert notifications[0]["event_type"] == "game_final"
+
+
+@pytest.mark.parametrize(
+    "status,home_score,away_score,home_seed,away_seed,expected_event",
+    [
+        ("in_progress", 40, 38, 1, 16, "halftime"),
+        ("completed", 90, 65, 1, 16, "game_final"),
+        ("completed", 65, 90, 1, 16, "upset"),
+    ],
+)
+def test_notification_not_repeated_after_being_marked_sent(
+    status, home_score, away_score, home_seed, away_seed, expected_event
+):
+    """Once the event type returned by the scheduler is recorded, the game is not notified again.
+
+    send_notifications stores notif["event_type"] via mark_notification_sent, so the
+    scheduler must recognise those values on the next poll.
+    """
+    mock_db = MagicMock()
+    scheduler = NotificationScheduler(mock_db)
+
+    game = MagicMock()
+    game.id = 1
+    game.status = status
+    game.last_notified_event = "game_start"
+    game.home_team_name = "Duke"
+    game.away_team_name = "Hampton"
+    game.home_score = home_score
+    game.away_score = away_score
+    game.home_team_seed = home_seed
+    game.away_team_seed = away_seed
+
+    result = MagicMock()
+    result.scalars.return_value.all.return_value = [game]
+    mock_db.execute = MagicMock(return_value=result)
+
+    first = scheduler.get_games_needing_notification()
+    assert [n["event_type"] for n in first] == [expected_event]
+
+    # What send_notifications -> mark_notification_sent records
+    game.last_notified_event = first[0]["event_type"]
+
+    assert scheduler.get_games_needing_notification() == []
+
+
+def test_completed_notified_after_halftime_was_sent():
+    """A game whose halftime notice went out still gets its final notification."""
+    mock_db = MagicMock()
+    scheduler = NotificationScheduler(mock_db)
+
+    game = MagicMock()
+    game.id = 1
+    game.status = "completed"
+    game.last_notified_event = "halftime"
+    game.home_team_name = "Duke"
+    game.away_team_name = "Hampton"
+    game.home_score = 90
+    game.away_score = 65
+    game.home_team_seed = 1
+    game.away_team_seed = 16
+
+    result = MagicMock()
+    result.scalars.return_value.all.return_value = [game]
+    mock_db.execute = MagicMock(return_value=result)
+
+    notifications = scheduler.get_games_needing_notification()
+
+    assert [n["event_type"] for n in notifications] == ["game_final"]

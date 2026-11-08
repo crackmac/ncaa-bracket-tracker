@@ -5,6 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.db.models import Game, Bracket
 
+# last_notified_event values meaning the notification for that status was already sent.
+# The event types are what mark_notification_sent stores; the status names are accepted too.
+IN_PROGRESS_NOTIFIED = {"halftime", "in_progress"}
+COMPLETED_NOTIFIED = {"game_final", "upset", "completed"}
+
 
 class NotificationScheduler:
     """Determines which games need notifications."""
@@ -34,7 +39,7 @@ class NotificationScheduler:
                 })
 
             # Game in progress (no in_progress notification sent yet)
-            elif game.status == "in_progress" and game.last_notified_event != "in_progress":
+            elif game.status == "in_progress" and game.last_notified_event not in IN_PROGRESS_NOTIFIED:
                 notifications.append({
                     "game": game,
                     "event_type": "halftime",
@@ -42,7 +47,7 @@ class NotificationScheduler:
                 })
 
             # Game completed (no final notification sent)
-            elif game.status == "completed" and game.last_notified_event != "completed":
+            elif game.status == "completed" and game.last_notified_event not in COMPLETED_NOTIFIED:
                 # Check for upset
                 is_upset = self._is_upset(game)
                 if is_upset:
