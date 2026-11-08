@@ -1,4 +1,5 @@
 """Celery task for polling ESPN API."""
+import asyncio
 import logging
 from app.celery_app import celery_app
 from app.db.session import SessionLocal
@@ -17,10 +18,8 @@ def poll_espn_data():
 
     try:
         sync_service = SyncService(db, espn_client, ScoringEngine)
-        # Note: Celery tasks can't use async, so we need to handle this
-        # For now, we'll skip the async call and return a placeholder
-        # In production, you'd use celery[async] or run_in_executor
-        result = {"games_updated": 0, "brackets_updated": 0}
+        # Celery workers run tasks synchronously, so drive the async sync to completion here
+        result = asyncio.run(sync_service.sync_games())
 
         logger.info(f"Polling complete: {result['games_updated']} games, {result['brackets_updated']} brackets")
         return {
@@ -29,6 +28,7 @@ def poll_espn_data():
             "brackets_updated": result["brackets_updated"]
         }
     except Exception as e:
+        logger.error(f"Polling failed: {e}", exc_info=True)
         return {
             "success": False,
             "error": str(e)
