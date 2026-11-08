@@ -12,7 +12,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.main import app
 from app.db.base import Base
-from app.db.models import Tournament, Team, Game, User
+from app.db.models import Bracket, Tournament, Team, Game, User
 from app.api.deps import get_db
 
 
@@ -186,3 +186,21 @@ def test_import_rejects_invalid_team_name(test_client):
     assert response.status_code == 400
     data = response.json()
     assert "detail" in data
+
+
+def test_import_uses_latest_tournament_when_several_exist(test_client):
+    """Import picks the newest tournament instead of failing when last year's is still stored."""
+    db = next(app.dependency_overrides[get_db]())
+    older = Tournament(year=2025, name="Last Year", start_date=datetime(2025, 3, 18), end_date=datetime(2025, 4, 7))
+    db.add_all([older, User(name="Second User", email="second@example.com")])
+    db.commit()
+
+    yaml_string = yaml.dump({"name": "Two Seasons", "bracket_type": "chalk", "picks": [{"game_id": 1, "winner": "Duke"}]})
+    response = test_client.post(
+        "/api/v1/brackets/import",
+        files={"file": ("bracket.yaml", BytesIO(yaml_string.encode()), "application/yaml")}
+    )
+
+    assert response.status_code == 201, response.json()
+    bracket = db.get(Bracket, response.json()["id"])
+    assert bracket.tournament.year == 2026

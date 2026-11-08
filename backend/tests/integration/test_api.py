@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.main import app
 from app.db.base import Base
-from app.db.models import Tournament, Team, Game, User
+from app.db.models import Bracket, Tournament, Team, Game, User
 from app.api.deps import get_db
 
 
@@ -115,3 +115,31 @@ def test_create_bracket_rejects_missing_picks(test_client):
 
     assert response.status_code == 400
     assert "picks" in response.json()["detail"].lower()
+
+
+def _add_older_tournament_and_second_user():
+    """Simulate a database that has kept last year's tournament and has more than one user."""
+    db = next(app.dependency_overrides[get_db]())
+    older = Tournament(year=2025, name="Last Year", start_date=datetime(2025, 3, 18), end_date=datetime(2025, 4, 7))
+    db.add_all([older, User(name="Second User", email="second@example.com")])
+    db.commit()
+    return db
+
+
+def test_create_bracket_uses_latest_tournament_when_several_exist(test_client):
+    """Bracket creation picks the newest tournament instead of failing on multiple rows."""
+    db = _add_older_tournament_and_second_user()
+
+    response = test_client.post(
+        "/api/v1/brackets",
+        json={
+            "name": "Two Seasons",
+            "bracket_type": "chalk",
+            "picks": [{"game_id": 1, "predicted_winner_id": 1}],
+        },
+    )
+
+    assert response.status_code == 201, response.json()
+    bracket = db.get(Bracket, response.json()["id"])
+    assert bracket.tournament.year == 2026
+    assert bracket.user.email == "test@example.com"
